@@ -16,6 +16,24 @@ cydia.getPrice('com.ziph0n.pickpocket') //Use the package name and not the displ
 ```
 
 <br>
+.getRepo(string) - Get repo for package.<br>
+
+```
+const cydia = require('cydia-api-node');
+
+cydia.getRepo('com.ziph0n.pickpocket') //Use the package name and not the display name
+.then(repo => {
+	console.log(repo); 
+	/*
+		{
+			name: "BigBoss",
+			link: "http://apt.thebigboss.org/repofiles/cydia/"
+		}
+	*/
+});
+```
+
+<br>
 .getInfo(string) - Basic Info
 
 ```
@@ -50,12 +68,12 @@ cydia.getInfo('PickPocket') //Use the package name or the display name. Case-ins
 ```
 
 <br>
-.getAllInfo(string) - .getInfo() and .getPrice() in one function<br>
+.getAllInfo(string) - .getInfo(), .getPrice(), and .getRepo() in one function<br>
 
 ```
 const cydia = require('cydia-api-node');
 
-cydia.getInfo('com.ziph0n.pickpocket') //Use the package name or the display name. Case-insensitive
+cydia.getAllInfo('com.ziph0n.pickpocket') //Use the package name or the display name. Case-insensitive
 .then(info => {
 	console.log(info);
 	/* 
@@ -69,7 +87,7 @@ cydia.getInfo('com.ziph0n.pickpocket') //Use the package name or the display nam
 		}
 	*/
 });
-cydia.getInfo('PickPocket') //Use the package name or the display name. Case-insensitive
+cydia.getAllInfo('PickPocket') //Use the package name or the display name. Case-insensitive
 .then(info => {
 	console.log(info);
 	/* 
@@ -79,7 +97,11 @@ cydia.getInfo('PickPocket') //Use the package name or the display name. Case-ins
 			section: 'Tweaks',
 			summary: 'A Powerful, Full Featured and Highly Customizable Tweak Against Thieves!',
 			version: '1.4',
-			price: 1.99
+			price: 1.99,
+			repo: {
+				name: "BigBoss",
+				link: "http://apt.thebigboss.org/repofiles/cydia/"
+			}
 		}
 	*/
 });
