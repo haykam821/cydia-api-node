@@ -1,6 +1,6 @@
 {
   "name": "cydia-api-node",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Unofficial library for https://cydia.saurik.com/api/",
   "main": "cydia-api-node",
   "scripts": {
@@ -34,7 +34,7 @@
   },
   "dependencies": {
 	"superagent": "latest",
-    "jsdom": "9.11.0",
+    	"jsdom": "11.9.0",
 	"querystring": "0.2.0"
   }
 }
