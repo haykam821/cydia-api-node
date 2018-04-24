@@ -64,12 +64,13 @@ self.getInfo = async function(displayname) {
                 if(results[i].display === null) continue
 				
 				if(displayname.toLowerCase() === results[i].display.toLowerCase()) {
-					results[i].link = `http://cydia.saurik.com/package/${results[i].name}`
+                    results[i].link = `http://cydia.saurik.com/package/${results[i].name}`
+                    results[i].img = `http://cydia.saurik.com/icon@2x/${results[i].name}.png`
 					return results[i];
 				}  
 				if(displayname.toLowerCase() === results[i].name.toLowerCase()) { 
-					results[i].link = `http://cydia.saurik.com/package/${results[i].name}`
-			
+                    results[i].link = `http://cydia.saurik.com/package/${results[i].name}`
+                    results[i].img = `http://cydia.saurik.com/icon@2x/${results[i].name}.png`
 					return results[i];
 				}
             }
@@ -87,17 +88,14 @@ self.getRepo = async function(pkgname) {
         const pkg = querystring.escape(pkgname);
         const link = `http://cydia.saurik.com/package/${pkg}`;
         const path = './/panel/footer/p/span[2]';
-        const imgPath = `.//panel/div/div[1]/div/span/img/@src`
         
         const dom = await JSDOM.fromURL(link, {userAgent: useragent})
         const document = dom.window.document
         
         const result = document.evaluate(path, document.body, null, 2, null);
-        const img =  document.evaluate(imgPath, document.body, null, 2, null);
         const repo = result.stringValue;
         dom.window.close();
         return {
-            img: `http://cydia.saurik.com${img.stringValue}`,
             name: repo,
             link: repos[repo],
             addLink: `https://cydia.saurik.com/api/share#?source=${repos[repo]}`
