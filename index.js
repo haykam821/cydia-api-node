@@ -98,7 +98,7 @@ self.getRepo = async function(pkgname) {
         return {
             name: repo,
             link: repos[repo],
-            addLink: `cydia://url/https://cydia.saurik.com/api/share#?source=${repos[repo]}`
+            addLink: `https://cydia.saurik.com/api/share#?source=${repos[repo]}`
         }
         
 }
