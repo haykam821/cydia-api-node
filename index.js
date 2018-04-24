@@ -63,16 +63,13 @@ self.getInfo = async function(displayname) {
             for(let i = 0; i< results.length; i++) {
                 if(results[i].display === null) continue
 				
-				if(displayname.toLowerCase() === results[i].display.toLowerCase()) {
+                if(displayname.toLowerCase() === results[i].display.toLowerCase() 
+                    || displayname.toLowerCase() === results[i].name.toLowerCase()) {
+                        
                     results[i].link = `http://cydia.saurik.com/package/${results[i].name}`
                     results[i].img = `http://cydia.saurik.com/icon@2x/${results[i].name}.png`
 					return results[i];
-				}  
-				if(displayname.toLowerCase() === results[i].name.toLowerCase()) { 
-                    results[i].link = `http://cydia.saurik.com/package/${results[i].name}`
-                    results[i].img = `http://cydia.saurik.com/icon@2x/${results[i].name}.png`
-					return results[i];
-				}
+                } 
             }
         }
         
