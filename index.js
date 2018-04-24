@@ -1,9 +1,10 @@
 /**
  * cydia-api-node
- * @version 1.0.1
+ * @version 1.1.0
  * @author 1Conan <me@1conan.com> (https://1conan.com)
  */
 const jsdom = require("jsdom");
+const { JSDOM } = jsdom;
 const request = require("superagent");
 const repos = require("./repos.json");
 const querystring = require("querystring");
@@ -17,23 +18,15 @@ let self = module.exports = {};
  * @param {string} keyword
  * @return {object} results
  */
-self.search = function(keyword) {
-	
-	return new Promise(function(resolve, reject){
-        const query = querystring.stringify({query: keyword});
-        const req = request.get(`https://cydia.saurik.com/api/macciti?${query}`)
-        .set("User-Agent", useragent);
-        
-        req.then((res) => {
-            if(res.text == "{\"results\":[]}") {
-                return resolve(false);
-            }
-			const result = res.body;
-            const results = result.results;
-            return resolve(results);        
-        });
-    });
-
+self.search = async function(keyword) {
+    const query = querystring.stringify({query: keyword});
+    const res = await request.get(`https://cydia.saurik.com/api/macciti?${query}`)
+    .set("User-Agent", useragent);
+    
+    if(res.body.results.length !== 0)
+        return res.body.results
+    
+    return false
 }
 
 /**
@@ -41,22 +34,16 @@ self.search = function(keyword) {
  * @param {string} pkgnme
  * @return {number}
  */
-self.getPrice = function(pkgname) {
-    return new Promise(function(resolve, reject){
+self.getPrice = async function(pkgname) {
         const query = querystring.stringify({query: pkgname});
-        const req = request.get(`https://cydia.saurik.com/api/ibbignerd?${query}`)
+        const res = await request.get(`https://cydia.saurik.com/api/ibbignerd?${query}`)
         .set("User-Agent", useragent);
         
-        req.then((res) => {
-            let price;
-            if(res.text == "null") {
-                price = 0;
-            } else {
-                price = Math.round(res.body.msrp * 100) / 100;
-            }
-            return resolve(price);        
-        });
-    });
+        if(res.text !== `null`) {
+            return Math.round(res.body.msrp * 100) / 100;
+        }
+        
+        return 0
 };
     
 /**
@@ -64,37 +51,31 @@ self.getPrice = function(pkgname) {
  * @param {string} displayname - Package Display Name or Package Name
  * @return {object/bool} - (display, name ,section, summary, version) / false for not found tweaks
  */
-self.getInfo = function(displayname) {
-    return new Promise(function(resolve, reject){
+self.getInfo = async function(displayname) {
         const query = querystring.stringify({query: displayname});
-        const req = request.get(`https://cydia.saurik.com/api/macciti?${query}`)
+        const res = await request.get(`https://cydia.saurik.com/api/macciti?${query}`)
         .set("User-Agent", useragent);
 
-        req.then((res) => {
-            if(res.text == "{\"results\":[]}") {
-                return resolve(false);
+        const results = res.body.results
+        
+        if(results.length !== 0) {
+        
+            for(let i = 0; i< results.length; i++) {
+                if(results[i].display === null) continue
+				
+				if(displayname.toLowerCase() === results[i].display.toLowerCase()) {
+					results[i].link = `http://cydia.saurik.com/package/${results[i].name}`
+					return results[i];
+				}  
+				if(displayname.toLowerCase() === results[i].name.toLowerCase()) { 
+					results[i].link = `http://cydia.saurik.com/package/${results[i].name}`
+			
+					return results[i];
+				}
             }
-            const result = res.body;
-            const results = result.results;
-            const resultsLength = results.length; 
-            let foundTweak = false;
-            for(let i = 0; i < resultsLength; i++){
-                if(results[i].display !== null) {
-                    if(displayname.toLowerCase() === results[i].display.toLowerCase()) {
-                        foundTweak = true;
-                        return resolve(results[i]);
-                    }  
-                    if(displayname.toLowerCase() === results[i].name.toLowerCase()) {
-                        foundTweak = true;
-                        return resolve(results[i]);
-                    }
-                }    
-            }
-            if(!foundTweak) {
-                return resolve(false);
-            }
-        });
-    });
+        }
+        
+        return false
 };
 
 /**
@@ -102,27 +83,24 @@ self.getInfo = function(displayname) {
  * @param {string} pkgnamae
  * @return {bool/object}
  */
-self.getRepo = function(pkgname) {
-    return new Promise(function(resolve, reject){
+self.getRepo = async function(pkgname) {
         const pkg = querystring.escape(pkgname);
         const link = `http://cydia.saurik.com/package/${pkg}`;
         const path = './/panel/footer/p/span[2]';
         
-        jsdom.env({
-            url: link,
-            userAgent: useragent,
-            done: function(err, window) {
-                if(err) {
-                    return resolve(false);
-                }
-                const document = window.document;
-                const result = document.evaluate(path, document.body, null, 2, null);
-                const repo = result.stringValue;
-                window.close();
-                return resolve({name:repo, link: repos[`${repo}`]});
-            }
-        });
-    });
+        const dom = await JSDOM.fromURL(link, {userAgent: useragent})
+        const document = dom.window.document
+        
+        const result = document.evaluate(path, document.body, null, 2, null);
+        const repo = result.stringValue;
+        dom.window.close();
+        
+        return {
+            name: repo,
+            link: repos[repo],
+            addLink: `cydia://url/https://cydia.saurik.com/api/share#?source=${repos[repo]}`
+        }
+        
 }
 
 /**
@@ -130,20 +108,16 @@ self.getRepo = function(pkgname) {
  * @param {string} displayname - Package Display Name or Package Name
  * @return {object/bool} - (display, name ,section, summary, version, price) / false for not found tweaks
  */
- self.getAllInfo = function(displayname) {
-    return new Promise(function(resolve, reject){
-        let info = self.getInfo(displayname).then((info) => {
-            if(!info) {
-                return resolve(false);
-            } else {
-                const price = self.getPrice(info.name).then(price => {
-                    info.price = price;
-                    const repo = self.getRepo(info.name).then(repo => {
-						info.repo = repo;
-                        return resolve(info);
-                    });
-                });
-            }
-        });
-     });
+ self.getAllInfo = async function(displayname) {
+    let info = await self.getInfo(displayname)
+    if(info === false)
+        return false
+    
+    const price = await self.getPrice(info.name)
+    info.price = price
+    
+    const repo = await self.getRepo(info.name)
+    info.repo = repo
+    
+    return info
 };
